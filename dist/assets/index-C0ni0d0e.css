@@ -1,0 +1,1 @@
+*{--greyBlue: #a0b3da;--darkPink: #cf3673;--lightPink: #f0dede}body{background-color:var(--greyBlue);display:flex;align-items:center;justify-content:center}#my-canvas{border:5px solid var(--);background-color:var(--lightPink)}
