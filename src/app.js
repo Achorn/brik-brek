@@ -7,10 +7,17 @@ const darkPink = "#cf3673";
 const greyBlue = "#748cbb";
 let canvas = document.querySelector("#my-canvas");
 let ctx = canvas.getContext("2d");
-
+let balls = [];
 let blocks = [];
 for (let i = 0; i < 7; i++) {
   for (let j = 0; j < 7; j++) {
+    let randomNum = Math.random();
+    let color =
+      randomNum < 0.333333
+        ? darkPink
+        : randomNum < 0.66666
+        ? "#855c8c"
+        : greyBlue;
     blocks.push({
       startX: 25 + i * 140,
       startY: 25 + j * 50,
@@ -18,16 +25,40 @@ for (let i = 0; i < 7; i++) {
       height: 20,
       toDispose: false,
       id: i + j,
-      color: greyBlue,
+      color: color,
+      power: "ball",
     });
   }
 }
+let centerOfBlock = (block) => {
+  return {
+    x: block.startX + block.width * 0.5,
+    y: block.startY + block.height * 0.5,
+  };
+};
 let drawBlocks = () => {
   blocks.forEach((block) => {
     calculateCollisionSide(block);
     ctx.fillStyle = block.color;
     ctx.fillRect(block.startX, block.startY, block.width, block.height);
   });
+};
+let activateBlockPower = (block) => {
+  // return;
+  if (!block.power) return;
+  let blockCenter = centerOfBlock(block);
+  let ball = {
+    radius: 20,
+    positionX: blockCenter.x,
+    positionY: blockCenter.y,
+    xDirection: 1,
+    yDirection: -1,
+    speed: 0.29,
+    color: block.color,
+    life: 1,
+    toDispose: false,
+  };
+  balls.push(ball);
 };
 // ctx.clearRect(45, 45, 60, 60);
 // ctx.strokeRect(50, 50, 50, 50);
@@ -42,15 +73,16 @@ let paddle = {
   id: "paddle",
 };
 blocks.push(paddle);
-const drawPaddle = () => {
-  ctx.fillStyle = paddle.color;
-  //   ctx.fillRect(
-  //     paddle.startX - paddle.width * 0.5,
-  //     canvas.height - 20 - 20,
-  //     paddle.width,
-  //     paddle.height
-  //   );
-};
+
+// const drawPaddle = () => {
+//   ctx.fillStyle = paddle.color;
+//   //   ctx.fillRect(
+//   //     paddle.startX - paddle.width * 0.5,
+//   //     canvas.height - 20 - 20,
+//   //     paddle.width,
+//   //     paddle.height
+//   //   );
+// };
 
 const updatePaddle = () => {
   paddle.startX = cursorPosX;
@@ -64,49 +96,72 @@ let ball = {
   xDirection: 1,
   yDirection: -1,
   speed: 0.29,
-  color: darkPink,
+  color: "white",
+  life: 1,
+  toDispose: false,
 };
 ball.positionY = canvas.height - ball.radius - 30;
 
-let updateBall = (deltaTime) => {
+balls.push(ball);
+
+let updateBalls = (deltaTime) => {
+  balls.forEach((ball) => updateBall(ball, deltaTime));
+};
+let updateBall = (ball, deltaTime) => {
   ball.positionX += ball.speed * deltaTime * ball.xDirection;
   ball.positionY += ball.speed * deltaTime * ball.yDirection;
   // if (ball.positionY + ball.radius >= canvas.height) ball.yDirection = -1;
   if (ball.positionY - ball.radius <= 0) ball.yDirection = +1;
   if (ball.positionX + ball.radius >= canvas.width) ball.xDirection = -1;
   if (ball.positionX - ball.radius <= 0) ball.xDirection = +1;
+
+  //out of bounds
+  if (ball.positionY - ball.radius > canvas.height) {
+    console.log("ball out of bounds");
+    ball.toDispose = true;
+  }
 };
 
-let drawBall = () => {
+let drawBalls = () => {
+  balls.forEach((ball) => drawBall(ball));
+};
+let drawBall = (ball) => {
   ctx.beginPath();
   ctx.arc(ball.positionX, ball.positionY, ball.radius, 0, 2 * Math.PI);
   ctx.fillStyle = ball.color;
   ctx.fill();
   // ctx.stroke();
 };
+const disposeBalls = () => {
+  balls = balls.filter((ball) => !ball.toDispose);
+};
 
 const checkCollision = () => {
   //have ball
   // check every block to see if it is colliding with ball
   blocks.forEach((block) => {
-    if (isColliding(block)) {
-      console.log(block.id);
-      let side = calculateCollisionSide(block);
-      if (side == 1) ball.yDirection = -ball.yDirection;
-      if (side == 2) ball.xDirection = -ball.xDirection;
-      if (side == 3) ball.xDirection = -ball.xDirection;
-      if (side == 4) ball.yDirection = -ball.yDirection;
-
-      if (block.id != "paddle") block.toDispose = true;
-      // ball.speed += 0.005;
-    }
+    balls.forEach((ball) => {
+      if (isColliding(block, ball)) {
+        let side = calculateCollisionSide(block);
+        if (side == 1) ball.yDirection = 1; //bottom
+        if (side == 2) ball.xDirection = -1; //left
+        if (side == 3) ball.xDirection = 1; //right
+        if (side == 4) ball.yDirection = -1; //top
+        if (block.id != "paddle") {
+          activateBlockPower(block);
+          block.toDispose = true;
+        }
+        // ball.speed += 0.005;
+      }
+    });
   });
 };
-const isColliding = (block) => {
+const isColliding = (block, ball) => {
   //X intersecting
   // # Find the closest point on the square
-  let blockX = block.startX + block.width * 0.5;
-  let blockY = block.startY + block.height * 0.5;
+  let blockCenter = centerOfBlock(block);
+  let blockX = blockCenter.x;
+  let blockY = blockCenter.y;
   let diff_x = ball.positionX - blockX;
   let diff_y = ball.positionY - block.startY;
 
@@ -170,18 +225,18 @@ const calculateCollisionSide = (block) => {
   if (ballAngle > bottomLeftAngle || ballAngle < bottomRightAngle) {
     // Bottom
     angle = 1;
-    block.color = greyBlue;
+    // block.color = greyBlue;
   } else if (ballAngle > topLefttAngle && ballAngle < bottomLeftAngle) {
     // Left
     angle = 2;
-    block.color = darkPink;
+    // block.color = darkPink;
   } else if (ballAngle > bottomRightAngle && ballAngle < topRightAngle) {
     // Right
     angle = 3;
-    block.color = darkPink;
+    // block.color = darkPink;
   } else {
     // Top
-    block.color = greyBlue;
+    // block.color = greyBlue;
   }
   return angle;
 };
@@ -205,12 +260,13 @@ let gameLoop = (currentTime) => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     checkCollision();
     updatePaddle(deltaTime);
-    updateBall(deltaTime);
+    updateBalls(deltaTime);
     disposeBlocks();
+    disposeBalls();
 
-    drawPaddle();
+    // drawPaddle();
     drawBlocks();
-    drawBall();
+    drawBalls();
     // Store the current time for the next frame
     lastTime = currentTime;
   }
