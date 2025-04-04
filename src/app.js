@@ -5,9 +5,13 @@ let cursorPosX = canvasWidth / 2;
 const lightPink = "#f0dede";
 const darkPink = "#cf3673";
 const greyBlue = "#748cbb";
+
+let gamePad = { up: false, left: false, right: false };
+
 let canvas = document.querySelector("#my-canvas");
 let ctx = canvas.getContext("2d");
 let balls = [];
+let ballSpeed = 0.45;
 let blocks = [];
 for (let i = 0; i < 7; i++) {
   for (let j = 0; j < 7; j++) {
@@ -38,13 +42,12 @@ let centerOfBlock = (block) => {
 };
 let drawBlocks = () => {
   blocks.forEach((block) => {
-    calculateCollisionSide(block);
+    // calculateCollisionSide(block);
     ctx.fillStyle = block.color;
     ctx.fillRect(block.startX, block.startY, block.width, block.height);
   });
 };
 let activateBlockPower = (block) => {
-  // return;
   if (!block.power) return;
   let blockCenter = centerOfBlock(block);
   let ball = {
@@ -52,8 +55,8 @@ let activateBlockPower = (block) => {
     positionX: blockCenter.x,
     positionY: blockCenter.y,
     xDirection: 1,
-    yDirection: -1,
-    speed: 0.29,
+    yDirection: 1,
+    speed: ballSpeed,
     color: block.color,
     life: 1,
     toDispose: false,
@@ -64,7 +67,7 @@ let activateBlockPower = (block) => {
 // ctx.strokeRect(50, 50, 50, 50);
 
 let paddle = {
-  startX: canvas.width + 150 * 0.5,
+  startX: canvas.width * 0.5 - 150 * 0.5,
   startY: canvas.height - 50,
   width: 150,
   height: 20,
@@ -84,25 +87,33 @@ blocks.push(paddle);
 //   //   );
 // };
 
-const updatePaddle = () => {
-  paddle.startX = cursorPosX;
+const updatePaddle = (deltaTime) => {
+  let direction = 0;
+  if (gamePad.left) direction -= 0.5 * deltaTime;
+  if (gamePad.right) direction += 0.5 * deltaTime;
+
+  paddle.startX = paddle.startX + direction;
+  if (paddle.startX <= 0) paddle.startX = 5;
+  if (paddle.startX + paddle.width >= canvas.width)
+    paddle.startX = canvas.width - paddle.width - 5;
+
   //find cursor position. and move it to there...
 };
 
-let ball = {
+let primaryBall = {
   radius: 20,
   positionX: canvas.width / 2,
   positionY: canvas.width / 2,
-  xDirection: 1,
+  xDirection: 0,
   yDirection: -1,
-  speed: 0.29,
+  speed: ballSpeed,
   color: "white",
   life: 1,
   toDispose: false,
 };
-ball.positionY = canvas.height - ball.radius - 30;
+primaryBall.positionY = canvas.height - primaryBall.radius - 30;
 
-balls.push(ball);
+balls.push(primaryBall);
 
 let updateBalls = (deltaTime) => {
   balls.forEach((ball) => updateBall(ball, deltaTime));
@@ -117,7 +128,6 @@ let updateBall = (ball, deltaTime) => {
 
   //out of bounds
   if (ball.positionY - ball.radius > canvas.height) {
-    console.log("ball out of bounds");
     ball.toDispose = true;
   }
 };
@@ -142,7 +152,7 @@ const checkCollision = () => {
   blocks.forEach((block) => {
     balls.forEach((ball) => {
       if (isColliding(block, ball)) {
-        let side = calculateCollisionSide(block);
+        let side = calculateCollisionSide(block, ball);
         if (side == 1) ball.yDirection = 1; //bottom
         if (side == 2) ball.xDirection = -1; //left
         if (side == 3) ball.xDirection = 1; //right
@@ -150,6 +160,47 @@ const checkCollision = () => {
         if (block.id != "paddle") {
           activateBlockPower(block);
           block.toDispose = true;
+        } else {
+          //calculate ball angle hitting paddle
+
+          let blockSurface = {
+            start: block.startX,
+            end: block.startX + block.width,
+            center: block.startX + block.width * 0.5,
+          };
+          let frac = ball.positionX - blockSurface.start;
+          let center = blockSurface.center - blockSurface.start;
+          let angle = (frac - center) / block.width;
+          let distanceFromCenter = (frac - center) / block.width;
+          distanceFromCenter = Math.max(-0.3, distanceFromCenter);
+          distanceFromCenter = Math.min(0.3, distanceFromCenter);
+          distanceFromCenter *= 2;
+
+          distanceFromCenter *= 90;
+          distanceFromCenter <= 0
+            ? (distanceFromCenter += 90)
+            : (distanceFromCenter -= 90);
+          // distanceFromCenter = -distanceFromCenter;
+
+          // ball position
+          // convert to angle from 0-180
+          // angle = 180 - (distanceFromCenter + 0.5) * 180;
+          let direction = distanceFromCenter <= 0 ? 1 : -1;
+          let alpha = Math.abs(distanceFromCenter);
+          let c = 1;
+          const alphaRad = (alpha * Math.PI) / 180;
+
+          // Calculate side a
+          const a = c * Math.sin(alphaRad);
+
+          // Calculate side b
+          const b = c * Math.cos(alphaRad);
+
+          // paddle position
+          // normalize or whatever
+          // generate angle with window of tolerance
+          ball.xDirection = b * direction;
+          ball.yDirection = -a;
         }
         // ball.speed += 0.005;
       }
@@ -177,7 +228,7 @@ const isColliding = (block, ball) => {
   // # Check for collision
   return distance <= ball.radius;
 };
-const calculateCollisionSide = (block) => {
+const calculateCollisionSide = (block, ball) => {
   //lower quadrent
   // between angle from center of block to lower left angle to andle of block to lower right angle
   let blockCenter = {
@@ -240,14 +291,35 @@ const calculateCollisionSide = (block) => {
   }
   return angle;
 };
-
-canvas.addEventListener("mousemove", (event) => {
-  const rect = canvas.getBoundingClientRect(); // Get canvas position relative to viewport
-  const x = event.clientX - rect.left; // Calculate mouse position relative to canvas
-  cursorPosX = x - paddle.width * 0.5;
-  const y = event.clientY - rect.top;
-  // console.log(Math.atan2(canvas.width * 0.5 - x, canvas.height * 0.5 - y));
+document.addEventListener("keydown", (e) => {
+  if (e.code === "ArrowLeft") {
+    gamePad.left = true;
+  }
+  if (e.code === "ArrowRight") {
+    gamePad.right = true;
+  }
+  if (e.code === "ArrowUp") {
+    gamePad.up = true;
+  }
 });
+document.addEventListener("keyup", (e) => {
+  if (e.code === "ArrowLeft") {
+    gamePad.left = false;
+  }
+  if (e.code === "ArrowRight") {
+    gamePad.right = false;
+  }
+  if (e.code === "ArrowUp") {
+    gamePad.up = false;
+  }
+});
+
+// canvas.addEventListener("mousemove", (event) => {
+//   const rect = canvas.getBoundingClientRect(); // Get canvas position relative to viewport
+//   const x = event.clientX - rect.left; // Calculate mouse position relative to canvas
+//   cursorPosX = x - paddle.width * 0.5;
+//   const y = event.clientY - rect.top;
+// });
 const disposeBlocks = () => {
   blocks = blocks.filter((block) => !block.toDispose);
 };
