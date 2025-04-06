@@ -17,3 +17,28 @@ body {
   border: 5px solid var(--);
   background-color: var(--lightPink);
 }
+
+#score-container {
+  /* color: lightpink; */
+}
+
+#score-board {
+  position: absolute;
+  top: 0;
+  left: 20px;
+
+}
+
+#game-over {
+  display: none;
+  position: absolute;
+  flex-direction: column;
+  align-items: center;
+}
+
+#title-container {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}

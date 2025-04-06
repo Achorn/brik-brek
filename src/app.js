@@ -1,18 +1,30 @@
 const canvasWidth = 1000;
-const canvasHeight = 600;
+const canvasHeight = 700;
 let cursorPosX = canvasWidth / 2;
 //COLORS
 const lightPink = "#f0dede";
 const darkPink = "#cf3673";
 const greyBlue = "#748cbb";
 
-let gamePad = { up: false, left: false, right: false };
+const titleElement = document.querySelector("#title-container");
+const gameOverElement = document.querySelector("#game-over");
+const gameOverTitleElement = document.querySelector("#game-over-title");
+
+const scoreElement = document.querySelector("#score");
+
+const livesElement = document.querySelector("#lives");
+let score = 0;
+let lives = 3;
+let gamePad = { up: false, left: false, right: false, reset: false };
 
 let canvas = document.querySelector("#my-canvas");
 let ctx = canvas.getContext("2d");
 let balls = [];
 let ballSpeed = 0.45;
 let blocks = [];
+
+// start, playing, pause game over
+let state = "START";
 for (let i = 0; i < 7; i++) {
   for (let j = 0; j < 7; j++) {
     let randomNum = Math.random();
@@ -51,7 +63,7 @@ let activateBlockPower = (block) => {
   if (!block.power) return;
   let blockCenter = centerOfBlock(block);
   let ball = {
-    radius: 20,
+    radius: 15,
     positionX: blockCenter.x,
     positionY: blockCenter.y,
     xDirection: 1,
@@ -101,7 +113,7 @@ const updatePaddle = (deltaTime) => {
 };
 
 let primaryBall = {
-  radius: 20,
+  radius: 15,
   positionX: canvas.width / 2,
   positionY: canvas.width / 2,
   xDirection: 0,
@@ -111,7 +123,7 @@ let primaryBall = {
   life: 1,
   toDispose: false,
 };
-primaryBall.positionY = canvas.height - primaryBall.radius - 30;
+primaryBall.positionY = canvas.height - 80;
 
 balls.push(primaryBall);
 
@@ -122,9 +134,12 @@ let updateBall = (ball, deltaTime) => {
   ball.positionX += ball.speed * deltaTime * ball.xDirection;
   ball.positionY += ball.speed * deltaTime * ball.yDirection;
   // if (ball.positionY + ball.radius >= canvas.height) ball.yDirection = -1;
-  if (ball.positionY - ball.radius <= 0) ball.yDirection = +1;
-  if (ball.positionX + ball.radius >= canvas.width) ball.xDirection = -1;
-  if (ball.positionX - ball.radius <= 0) ball.xDirection = +1;
+  if (ball.positionY - ball.radius <= 0)
+    ball.yDirection = Math.abs(ball.yDirection);
+  if (ball.positionX + ball.radius >= canvas.width)
+    ball.xDirection = -Math.abs(ball.xDirection);
+  if (ball.positionX - ball.radius <= 0)
+    ball.xDirection = Math.abs(ball.xDirection);
 
   //out of bounds
   if (ball.positionY - ball.radius > canvas.height) {
@@ -160,6 +175,7 @@ const checkCollision = () => {
         if (block.id != "paddle") {
           activateBlockPower(block);
           block.toDispose = true;
+          score += 50;
         } else {
           //calculate ball angle hitting paddle
 
@@ -292,6 +308,7 @@ const calculateCollisionSide = (block, ball) => {
   return angle;
 };
 document.addEventListener("keydown", (e) => {
+  if (state === "START") state = "PLAYING";
   if (e.code === "ArrowLeft") {
     gamePad.left = true;
   }
@@ -300,6 +317,9 @@ document.addEventListener("keydown", (e) => {
   }
   if (e.code === "ArrowUp") {
     gamePad.up = true;
+  }
+  if (e.code === "KeyR") {
+    gamePad.reset = true;
   }
 });
 document.addEventListener("keyup", (e) => {
@@ -312,6 +332,10 @@ document.addEventListener("keyup", (e) => {
   if (e.code === "ArrowUp") {
     gamePad.up = false;
   }
+
+  if (e.code === "KeyR") {
+    gamePad.reset = false;
+  }
 });
 
 // canvas.addEventListener("mousemove", (event) => {
@@ -323,22 +347,60 @@ document.addEventListener("keyup", (e) => {
 const disposeBlocks = () => {
   blocks = blocks.filter((block) => !block.toDispose);
 };
+const updateScore = () => {
+  scoreElement.innerHTML = score;
+};
 
 let lastTime = 16;
 let gameLoop = (currentTime) => {
   // Calculate deltaTime in milliseconds
   const deltaTime = currentTime - lastTime;
+
   if (deltaTime) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     checkCollision();
-    updatePaddle(deltaTime);
-    updateBalls(deltaTime);
-    disposeBlocks();
-    disposeBalls();
+
+    if (state == "PLAYING") {
+      titleElement.style.display = "none";
+      updatePaddle(deltaTime);
+      updateBalls(deltaTime);
+      disposeBlocks();
+      disposeBalls();
+
+      if (blocks.length == 1) {
+        state = "OVER";
+        gameOverElement.style.display = "flex";
+      }
+      if (balls.length == 0) {
+        if (lives === 0) {
+          state = "OVER";
+          gameOverElement.style.display = "flex";
+        } else {
+          console.log("removing life ");
+          lives -= 1;
+          livesElement.innerHTML = lives;
+          balls.push({
+            radius: 15,
+            positionX: canvas.width / 2,
+            positionY: canvas.width / 2,
+            xDirection: 0,
+            yDirection: -1,
+            speed: ballSpeed,
+            color: "white",
+            life: 1,
+            toDispose: false,
+          });
+        }
+      }
+    }
+    if (state == "OVER") {
+      if (gamePad.reset) location.reload();
+    }
 
     // drawPaddle();
     drawBlocks();
     drawBalls();
+    updateScore();
     // Store the current time for the next frame
     lastTime = currentTime;
   }
