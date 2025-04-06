@@ -2,6 +2,8 @@
   --greyBlue: #a0b3da;
   --darkPink: #cf3673;
   --lightPink: #f0dede;
+  box-sizing: border-box;
+  margin: 0;
 }
 
 body {
@@ -12,26 +14,35 @@ body {
   justify-content: center;
 }
 
+#game-wrapper {
+  position: relative;
+}
+
 #my-canvas {
   /* width: 100vw; */
   border: 5px solid var(--);
   background-color: var(--lightPink);
 }
 
-#score-container {
-  /* color: lightpink; */
-}
-
 #score-board {
-  position: absolute;
-  top: 0;
-  left: 20px;
 
+  position: absolute;
+  /* background-color: red; */
+  width: 100%;
+  top: 0;
+  left: 0px;
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 25px;
 }
 
 #game-over {
   display: none;
   position: absolute;
+  top: 70%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
   flex-direction: column;
   align-items: center;
 }
@@ -39,6 +50,9 @@ body {
 #title-container {
   position: absolute;
   display: flex;
+  top: 70%;
+  left: 50%;
   flex-direction: column;
+  transform: translate(-50%, -50%);
   align-items: center;
 }

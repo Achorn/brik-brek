@@ -10,23 +10,26 @@
 </head>
 
 <body>
-  <div id="score-board">
-    <h1 id='score-container'>Score: <span id='score'>0</span></h1>
-    <h1 id='lives-container'>Lives: <span id='lives'>3</span></h1>
+  <div id="game-wrapper">
+    <canvas id="my-canvas" width="700" height="700">
+    </canvas>
+    <div id="score-board">
+      <h1 id='score-container'>Score: <span id='score'>0</span></h1>
+      <h1 id='lives-container'>Lives: <span id='lives'>3</span></h1>
+      <!-- <h1 id='lives-container'><span id='lives'></span></h1> -->
+    </div>
+    <div id="title-container">
+      <h1 id="game-title">Brik Brek</h1>
+      <h3 id="game-title">Press any button to start playing</h3>
+
+    </div>
+
+    <div id="game-over">
+      <h1 id='game-over-title'>GAME OVER </h1>
+      <h2>PRESS 'R' TO RESTART </h2>
+    </div>
 
   </div>
-  <div id="title-container">
-    <h1 id="game-title">Brik Brek</h1>
-    <h3 id="game-title">Press any button to start playing</h3>
-
-  </div>
-
-  <div id="game-over">
-    <h1 id='game-over-title'>GAME OVER </h1>
-    <h2>PRESS 'R' TO RESTART </h2>
-  </div>
-  <canvas id="my-canvas" width="1000" height="700">
-  </canvas>
   <script type="module" src="./app.js"></script>
 
 </body>

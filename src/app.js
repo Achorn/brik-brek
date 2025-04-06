@@ -1,4 +1,4 @@
-const canvasWidth = 1000;
+const canvasWidth = 700;
 const canvasHeight = 700;
 let cursorPosX = canvasWidth / 2;
 //COLORS
@@ -16,7 +16,7 @@ const livesElement = document.querySelector("#lives");
 let score = 0;
 let lives = 3;
 let gamePad = { up: false, left: false, right: false, reset: false };
-
+let paddingTop = 65;
 let canvas = document.querySelector("#my-canvas");
 let ctx = canvas.getContext("2d");
 let balls = [];
@@ -25,7 +25,7 @@ let blocks = [];
 
 // start, playing, pause game over
 let state = "START";
-for (let i = 0; i < 7; i++) {
+for (let i = 0; i < 5; i++) {
   for (let j = 0; j < 7; j++) {
     let randomNum = Math.random();
     let color =
@@ -36,7 +36,7 @@ for (let i = 0; i < 7; i++) {
         : greyBlue;
     blocks.push({
       startX: 25 + i * 140,
-      startY: 25 + j * 50,
+      startY: paddingTop + j * 50,
       width: 100,
       height: 20,
       toDispose: false,
@@ -128,7 +128,13 @@ primaryBall.positionY = canvas.height - 80;
 balls.push(primaryBall);
 
 let updateBalls = (deltaTime) => {
-  balls.forEach((ball) => updateBall(ball, deltaTime));
+  if (state == "START") {
+    //update primary ball
+    balls[0].positionX = paddle.startX + paddle.width * 0.5;
+    balls[0].positionY = paddle.startY - 30;
+  } else {
+    balls.forEach((ball) => updateBall(ball, deltaTime));
+  }
 };
 let updateBall = (ball, deltaTime) => {
   ball.positionX += ball.speed * deltaTime * ball.xDirection;
@@ -308,7 +314,6 @@ const calculateCollisionSide = (block, ball) => {
   return angle;
 };
 document.addEventListener("keydown", (e) => {
-  if (state === "START") state = "PLAYING";
   if (e.code === "ArrowLeft") {
     gamePad.left = true;
   }
@@ -316,6 +321,7 @@ document.addEventListener("keydown", (e) => {
     gamePad.right = true;
   }
   if (e.code === "ArrowUp") {
+    if (state === "START") state = "PLAYING";
     gamePad.up = true;
   }
   if (e.code === "KeyR") {
@@ -360,10 +366,10 @@ let gameLoop = (currentTime) => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     checkCollision();
 
+    updatePaddle(deltaTime);
+    updateBalls(deltaTime);
     if (state == "PLAYING") {
       titleElement.style.display = "none";
-      updatePaddle(deltaTime);
-      updateBalls(deltaTime);
       disposeBlocks();
       disposeBalls();
 
@@ -377,12 +383,14 @@ let gameLoop = (currentTime) => {
           gameOverElement.style.display = "flex";
         } else {
           console.log("removing life ");
+          state = "START";
           lives -= 1;
           livesElement.innerHTML = lives;
           balls.push({
             radius: 15,
             positionX: canvas.width / 2,
-            positionY: canvas.width / 2,
+            positionY: paddle.startY - 30,
+
             xDirection: 0,
             yDirection: -1,
             speed: ballSpeed,
