@@ -9,12 +9,14 @@ const greyBlue = "#748cbb";
 const titleElement = document.querySelector("#title-container");
 const gameOverElement = document.querySelector("#game-over");
 const gameOverTitleElement = document.querySelector("#game-over-title");
-
 const scoreElement = document.querySelector("#score");
-
 const livesElement = document.querySelector("#lives");
+
+const levelElement = document.querySelector("#level");
+
 let score = 0;
 let lives = 3;
+let level = 1;
 let gamePad = { up: false, left: false, right: false, reset: false };
 let paddingTop = 65;
 let canvas = document.querySelector("#my-canvas");
@@ -22,30 +24,56 @@ let ctx = canvas.getContext("2d");
 let balls = [];
 let ballSpeed = 0.45;
 let blocks = [];
-
 // start, playing, pause game over
 let state = "START";
-for (let i = 0; i < 5; i++) {
-  for (let j = 0; j < 7; j++) {
-    let randomNum = Math.random();
-    let color =
-      randomNum < 0.333333
-        ? darkPink
-        : randomNum < 0.66666
-        ? "#855c8c"
-        : greyBlue;
-    blocks.push({
-      startX: 25 + i * 140,
-      startY: paddingTop + j * 50,
-      width: 100,
-      height: 20,
-      toDispose: false,
-      id: i + j,
-      color: color,
-      power: "ball",
-    });
+
+//create Level of Blocks
+
+let blockGroup = {
+  entering: false,
+  Offset: 0,
+};
+let updateBlockGroup = (deltaTime) => {
+  // update offset
+  if (blockGroup.entering) {
+    if (blockGroup.Offset < 0) {
+      let moveDistance = deltaTime * 0.4;
+      blockGroup.Offset += moveDistance;
+      blocks.forEach((block) => {
+        if (block.id != "paddle") {
+          block.startY = block.startY + moveDistance;
+        }
+      });
+    } else blockGroup.entering = false;
   }
-}
+  // update blocks y
+};
+const createBlocks = () => {
+  //randomly select powerups
+
+  for (let i = 0; i < 5; i++) {
+    for (let j = 0; j < 5; j++) {
+      let randomNum = Math.random();
+      let color =
+        randomNum < 0.333333
+          ? darkPink
+          : randomNum < 0.66666
+          ? "#855c8c"
+          : greyBlue;
+      blocks.push({
+        startX: 25 + i * 140,
+        startY: paddingTop + j * 50 + blockGroup.Offset,
+        width: 100,
+        height: 30,
+        toDispose: false,
+        id: i + j,
+        color: color,
+        power: "ball",
+      });
+    }
+  }
+};
+createBlocks();
 let centerOfBlock = (block) => {
   return {
     x: block.startX + block.width * 0.5,
@@ -61,6 +89,7 @@ let drawBlocks = () => {
 };
 let activateBlockPower = (block) => {
   if (!block.power) return;
+  if (level != 1) return;
   let blockCenter = centerOfBlock(block);
   let ball = {
     radius: 15,
@@ -357,6 +386,36 @@ const updateScore = () => {
   scoreElement.innerHTML = score;
 };
 
+// const element = document.getElementById("yourElement");
+// let startX, startY;
+
+// document.addEventListener("touchstart", (e) => {
+//   console.log("start");
+//   startX = e.touches[0].clientX;
+//   startY = e.touches[0].clientY;
+//   console.log(startX, startY);
+// });
+
+// document.addEventListener("touchmove", (e) => {
+//   const currentX = e.touches[0].clientX;
+//   const currentY = e.touches[0].clientY;
+
+//   const deltaX = currentX - startX;
+//   const deltaY = currentY - startY;
+//   console.log(currentX, currentY);
+//   // Perform actions based on the drag
+//   // For example, move the element:
+//   // element.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+// });
+
+// document.addEventListener("touchend", (e) => {
+//   // Actions after drag is completed
+//   // Reset start positions
+//   console.log("end");
+//   startX = 0;
+//   startY = 0;
+// });
+
 let lastTime = 16;
 let gameLoop = (currentTime) => {
   // Calculate deltaTime in milliseconds
@@ -367,30 +426,36 @@ let gameLoop = (currentTime) => {
     checkCollision();
 
     updatePaddle(deltaTime);
+    updateBlockGroup(deltaTime);
     updateBalls(deltaTime);
     if (state == "PLAYING") {
       titleElement.style.display = "none";
+
       disposeBlocks();
       disposeBalls();
 
       if (blocks.length == 1) {
-        state = "OVER";
-        gameOverElement.style.display = "flex";
+        // NEXT LEVEL
+        level = level + 1;
+        blockGroup.entering = true;
+        blockGroup.Offset = -400;
+        console.log("next level");
+        levelElement.innerHTML = level;
+        createBlocks();
+        // gameOverElement.style.display = "flex";
       }
       if (balls.length == 0) {
         if (lives === 0) {
           state = "OVER";
           gameOverElement.style.display = "flex";
         } else {
-          console.log("removing life ");
           state = "START";
           lives -= 1;
           livesElement.innerHTML = lives;
           balls.push({
             radius: 15,
-            positionX: canvas.width / 2,
+            positionX: paddle.startX + paddle.width * 0.5,
             positionY: paddle.startY - 30,
-
             xDirection: 0,
             yDirection: -1,
             speed: ballSpeed,
