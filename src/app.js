@@ -46,14 +46,13 @@ let updateBlockGroup = (deltaTime) => {
       });
     } else blockGroup.entering = false;
   }
-  // update blocks y
 };
 const createBlocks = () => {
   //randomly select powerups
-
   for (let i = 0; i < 5; i++) {
-    for (let j = 0; j < 5; j++) {
+    for (let j = 0; j < 4; j++) {
       let randomNum = Math.random();
+      let powerNum = Math.random();
       let color =
         randomNum < 0.333333
           ? darkPink
@@ -68,7 +67,14 @@ const createBlocks = () => {
         toDispose: false,
         id: i + j,
         color: color,
-        power: "ball",
+        power:
+          powerNum > 0.8
+            ? "ball"
+            : powerNum > 0.7
+            ? "speed"
+            : powerNum > 0.6
+            ? "paddle"
+            : "",
       });
     }
   }
@@ -82,27 +88,77 @@ let centerOfBlock = (block) => {
 };
 let drawBlocks = () => {
   blocks.forEach((block) => {
-    // calculateCollisionSide(block);
     ctx.fillStyle = block.color;
     ctx.fillRect(block.startX, block.startY, block.width, block.height);
+    if (block.power) {
+      if (block.power == "ball") {
+        ctx.beginPath();
+        ctx.arc(
+          block.startX + block.width * 0.5,
+          block.startY + block.height * 0.5,
+          block.height * 0.3,
+          0,
+          2 * Math.PI
+        );
+        ctx.fillStyle = lightPink;
+        ctx.fill();
+      }
+      if (block.power == "speed") {
+        let triangleWidth = block.height * 0.3;
+        ctx.beginPath();
+        ctx.beginPath();
+        //point
+        ctx.moveTo(
+          block.startX - block.width * 0.5 + triangleWidth + block.width - 3,
+          block.startY + block.height * 0.5
+        );
+        //topLeft
+        ctx.lineTo(
+          block.startX + block.width * 0.5 - triangleWidth,
+          block.startY + block.height * 0.5 - triangleWidth
+        );
+
+        //bottomLeft
+        ctx.lineTo(
+          block.startX + block.width * 0.5 - triangleWidth,
+          block.startY + block.height * 0.5 + triangleWidth
+        );
+
+        ctx.fillStyle = lightPink;
+        ctx.fill();
+      }
+      if (block.power == "paddle") {
+        ctx.fillStyle = block.color;
+        ctx.fillStyle = lightPink;
+        ctx.fillRect(
+          block.startX + 25,
+          block.startY + 10,
+          block.width - 50,
+          block.height - 20
+        );
+        ctx.fill();
+      }
+    }
   });
 };
 let activateBlockPower = (block) => {
   if (!block.power) return;
-  if (level != 1) return;
-  let blockCenter = centerOfBlock(block);
-  let ball = {
-    radius: 15,
-    positionX: blockCenter.x,
-    positionY: blockCenter.y,
-    xDirection: 1,
-    yDirection: 1,
-    speed: ballSpeed,
-    color: block.color,
-    life: 1,
-    toDispose: false,
-  };
-  balls.push(ball);
+  // if (level != 1) return;
+  if (block.power == "ball") {
+    let blockCenter = centerOfBlock(block);
+    let ball = {
+      radius: 15,
+      positionX: blockCenter.x,
+      positionY: blockCenter.y,
+      xDirection: 1,
+      yDirection: -1,
+      speed: ballSpeed,
+      color: block.color,
+      life: 1,
+      toDispose: false,
+    };
+    balls.push(ball);
+  }
 };
 // ctx.clearRect(45, 45, 60, 60);
 // ctx.strokeRect(50, 50, 50, 50);
@@ -439,7 +495,6 @@ let gameLoop = (currentTime) => {
         level = level + 1;
         blockGroup.entering = true;
         blockGroup.Offset = -400;
-        console.log("next level");
         levelElement.innerHTML = level;
         createBlocks();
         // gameOverElement.style.display = "flex";
