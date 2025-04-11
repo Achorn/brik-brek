@@ -3,6 +3,8 @@ const canvasHeight = 700;
 let cursorPosX = canvasWidth / 2;
 //COLORS
 const lightPink = "#f0dede";
+// const lightPink = "#2b2c3a";
+
 const darkPink = "#cf3673";
 const greyBlue = "#748cbb";
 
@@ -458,7 +460,7 @@ class Lives {
     this.startX = 45;
     this.startY = 35;
     this.padding = 45;
-    this.radius = 15;
+    this.radius = 13;
   }
   update(deltaTime) {}
   draw() {
