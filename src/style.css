@@ -45,9 +45,24 @@ h1 {
   width: 100%;
   top: 0;
   left: 0px;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  /* /* grid-template-columns: auto auto auto; */
+
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  /* justify-content: space-between; */
   padding: 15px 25px;
+}
+
+#score-container {
+  /* background-color: red; */
+  grid-column-start: 2;
+  text-align: center;
+}
+
+#level-container {
+  text-align: end;
+  /* background-color: blue; */
 }
 
 #title-container {

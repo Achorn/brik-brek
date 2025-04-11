@@ -10,7 +10,6 @@ const titleElement = document.querySelector("#title-container");
 const gameOverElement = document.querySelector("#game-over");
 const gameOverTitleElement = document.querySelector("#game-over-title");
 const scoreElement = document.querySelector("#score");
-const livesElement = document.querySelector("#lives");
 const levelElement = document.querySelector("#level");
 
 let score = 0;
@@ -62,7 +61,7 @@ const createBlocks = () => {
           ? "#855c8c"
           : greyBlue;
       blocks.push({
-        startX: 25 + i * 140,
+        startX: 25 + i * 136,
         startY: paddingTop + j * 50 + blockGroup.Offset,
         width: 100,
         height: 30,
@@ -168,8 +167,6 @@ let activateBlockPower = (block) => {
     powerups.push(new PaddleGrowPowerUp());
   }
 };
-// ctx.clearRect(45, 45, 60, 60);
-// ctx.strokeRect(50, 50, 50, 50);
 
 let paddle = {
   startX: canvas.width * 0.5 - 150 * 0.5,
@@ -181,16 +178,6 @@ let paddle = {
   id: "paddle",
 };
 blocks.push(paddle);
-
-// const drawPaddle = () => {
-//   ctx.fillStyle = paddle.color;
-//   //   ctx.fillRect(
-//   //     paddle.startX - paddle.width * 0.5,
-//   //     canvas.height - 20 - 20,
-//   //     paddle.width,
-//   //     paddle.height
-//   //   );
-// };
 
 const updatePaddle = (deltaTime) => {
   let direction = 0;
@@ -464,6 +451,39 @@ class PaddleGrowPowerUp extends PowerUp {
   }
 }
 
+// Lives class
+
+class Lives {
+  constructor() {
+    this.startX = 45;
+    this.startY = 35;
+    this.padding = 45;
+    this.radius = 15;
+  }
+  update(deltaTime) {}
+  draw() {
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      ctx.arc(
+        this.startX + this.padding * i,
+        this.startY,
+        this.radius,
+        0,
+        2 * Math.PI
+      );
+      if (lives > i) {
+        //LIFE
+        ctx.fillStyle = "white";
+        ctx.fill();
+      }
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "white";
+      ctx.stroke();
+    }
+  }
+}
+let ject = new Lives();
+
 document.addEventListener("keydown", (e) => {
   if (e.code === "ArrowLeft") {
     gamePad.left = true;
@@ -495,48 +515,12 @@ document.addEventListener("keyup", (e) => {
   }
 });
 
-// canvas.addEventListener("mousemove", (event) => {
-//   const rect = canvas.getBoundingClientRect(); // Get canvas position relative to viewport
-//   const x = event.clientX - rect.left; // Calculate mouse position relative to canvas
-//   cursorPosX = x - paddle.width * 0.5;
-//   const y = event.clientY - rect.top;
-// });
 const disposeBlocks = () => {
   blocks = blocks.filter((block) => !block.toDispose);
 };
 const updateScore = () => {
   scoreElement.innerHTML = score;
 };
-
-// const element = document.getElementById("yourElement");
-// let startX, startY;
-
-// document.addEventListener("touchstart", (e) => {
-//   console.log("start");
-//   startX = e.touches[0].clientX;
-//   startY = e.touches[0].clientY;
-//   console.log(startX, startY);
-// });
-
-// document.addEventListener("touchmove", (e) => {
-//   const currentX = e.touches[0].clientX;
-//   const currentY = e.touches[0].clientY;
-
-//   const deltaX = currentX - startX;
-//   const deltaY = currentY - startY;
-//   console.log(currentX, currentY);
-//   // Perform actions based on the drag
-//   // For example, move the element:
-//   // element.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-// });
-
-// document.addEventListener("touchend", (e) => {
-//   // Actions after drag is completed
-//   // Reset start positions
-//   console.log("end");
-//   startX = 0;
-//   startY = 0;
-// });
 
 let lastTime = 16;
 let gameLoop = (currentTime) => {
@@ -551,6 +535,8 @@ let gameLoop = (currentTime) => {
     updateBlockGroup(deltaTime);
     updateBalls(deltaTime);
     updatePowerups(deltaTime);
+    ject.update(deltaTime);
+
     if (state == "PLAYING") {
       titleElement.style.display = "none";
 
@@ -573,7 +559,6 @@ let gameLoop = (currentTime) => {
         } else {
           state = "START";
           lives -= 1;
-          livesElement.innerHTML = lives;
           balls.push({
             radius: 15,
             positionX: paddle.startX + paddle.width * 0.5,
@@ -595,6 +580,7 @@ let gameLoop = (currentTime) => {
     // drawPaddle();
     drawBlocks();
     drawBalls();
+    ject.draw();
     updateScore();
     // Store the current time for the next frame
     lastTime = currentTime;
