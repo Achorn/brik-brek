@@ -1,5 +1,5 @@
-const canvasWidth = 700;
-const canvasHeight = 700;
+const canvasWidth = 1400;
+const canvasHeight = 1400;
 let cursorPosX = canvasWidth / 2;
 //COLORS
 const lightPink = "#f0dede";
@@ -14,15 +14,23 @@ const gameOverTitleElement = document.querySelector("#game-over-title");
 const scoreElement = document.querySelector("#score");
 const levelElement = document.querySelector("#level");
 
+let canvas = document.querySelector("#my-canvas");
+let ctx = canvas.getContext("2d");
+// const updateCanvasSize = () => {
+//   canvas.style.transform = `scale(50%)`;
+// };
+// window.addEventListener("resize", (e) => {
+//   updateCanvasSize();
+// });
+
 let score = 0;
 let lives = 3;
 let level = 1;
 let gamePad = { up: false, left: false, right: false, reset: false };
-let paddingTop = 65;
-let canvas = document.querySelector("#my-canvas");
-let ctx = canvas.getContext("2d");
+let paddingTop = 65 * 2;
+ctx.imageSmoothingEnabled = false;
 let balls = [];
-let ballSpeed = 0.45;
+let ballSpeed = 0.45 * 2;
 let powerSpeed = 1;
 let blocks = [];
 let powerups = [];
@@ -63,10 +71,10 @@ const createBlocks = () => {
           ? "#855c8c"
           : greyBlue;
       blocks.push({
-        startX: 25 + i * 136,
-        startY: paddingTop + j * 50 + blockGroup.Offset,
-        width: 100,
-        height: 30,
+        startX: 25 * 2 + i * 136 * 2,
+        startY: paddingTop + j * 50 * 2 + blockGroup.Offset,
+        width: 100 * 2,
+        height: 30 * 2,
         toDispose: false,
         id: i + j,
         color: color,
@@ -134,10 +142,10 @@ let drawBlocks = () => {
         ctx.fillStyle = block.color;
         ctx.fillStyle = lightPink;
         ctx.fillRect(
-          block.startX + 25,
-          block.startY + 10,
-          block.width - 50,
-          block.height - 20
+          block.startX + 25 * 2,
+          block.startY + 10 * 2,
+          block.width - 50 * 2,
+          block.height - 20 * 2
         );
         ctx.fill();
       }
@@ -150,7 +158,7 @@ let activateBlockPower = (block) => {
   if (block.power == "ball") {
     let blockCenter = centerOfBlock(block);
     let ball = {
-      radius: 15,
+      radius: 15 * 2,
       positionX: blockCenter.x,
       positionY: blockCenter.y,
       xDirection: 1,
@@ -171,10 +179,10 @@ let activateBlockPower = (block) => {
 };
 
 let paddle = {
-  startX: canvas.width * 0.5 - 150 * 0.5,
-  startY: canvas.height - 50,
-  width: 150,
-  height: 20,
+  startX: canvas.width * 0.5 - 150 * 0.5 * 2,
+  startY: canvas.height - 50 * 2,
+  width: 150 * 2,
+  height: 20 * 2,
   toDispose: false,
   color: greyBlue,
   id: "paddle",
@@ -183,8 +191,8 @@ blocks.push(paddle);
 
 const updatePaddle = (deltaTime) => {
   let direction = 0;
-  if (gamePad.left) direction -= 0.5 * deltaTime;
-  if (gamePad.right) direction += 0.5 * deltaTime;
+  if (gamePad.left) direction -= 0.5 * deltaTime * 2;
+  if (gamePad.right) direction += 0.5 * deltaTime * 2;
 
   paddle.startX = paddle.startX + direction;
   if (paddle.startX <= 0) paddle.startX = 5;
@@ -195,7 +203,7 @@ const updatePaddle = (deltaTime) => {
 };
 
 let primaryBall = {
-  radius: 15,
+  radius: 15 * 2,
   positionX: canvas.width / 2,
   positionY: canvas.width / 2,
   xDirection: 0,
@@ -213,7 +221,7 @@ let updateBalls = (deltaTime) => {
   if (state == "START") {
     //update primary ball
     balls[0].positionX = paddle.startX + paddle.width * 0.5;
-    balls[0].positionY = paddle.startY - 30;
+    balls[0].positionY = paddle.startY - 30 * 2;
   } else {
     balls.forEach((ball) => updateBall(ball, deltaTime));
   }
@@ -396,9 +404,7 @@ const calculateCollisionSide = (block, ball) => {
   return angle;
 };
 const updatePowerups = (deltaTime) => {
-  console.log("ball power: ", powerSpeed);
   powerups = powerups.filter((power) => !power.toDispose);
-  console.log(powerups);
 
   powerups.forEach((power) => {
     power.update(deltaTime);
@@ -418,15 +424,11 @@ class BallSpeedPowerUp extends PowerUp {
     this.initPowerUp();
   }
   initPowerUp() {
-    // console.log("in init: powerspeed: ", powerSpeed);
-    powerSpeed = 1.35;
+    powerSpeed = 1.25;
   }
   update(deltaTime) {
     this.timeLeft -= deltaTime;
-    // console.log(deltaTime);
-    // console.log(this.timeLeft);
     if (this.timeLeft <= 0) {
-      console.log("disposing");
       this.toDispose = true;
       powerSpeed = 1;
     }
@@ -439,16 +441,14 @@ class PaddleGrowPowerUp extends PowerUp {
     this.initPowerUp();
   }
   initPowerUp() {
-    // console.log("in init: powerspeed: ", powerSpeed);
-    paddle.width = 250;
+    paddle.width = 250 * 2;
   }
   update(deltaTime) {
     this.timeLeft -= deltaTime;
-    // console.log(deltaTime);
-    // console.log(this.timeLeft);
+
     if (this.timeLeft <= 0) {
       this.toDispose = true;
-      paddle.width = 150;
+      paddle.width = 150 * 2;
     }
   }
 }
@@ -457,10 +457,10 @@ class PaddleGrowPowerUp extends PowerUp {
 
 class Lives {
   constructor() {
-    this.startX = 45;
-    this.startY = 35;
-    this.padding = 45;
-    this.radius = 13;
+    this.startX = 45 * 2;
+    this.startY = 35 * 2;
+    this.padding = 45 * 2;
+    this.radius = 13 * 2;
   }
   update(deltaTime) {}
   draw() {
@@ -478,7 +478,7 @@ class Lives {
         ctx.fillStyle = "white";
         ctx.fill();
       }
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 3 * 2;
       ctx.strokeStyle = "white";
       ctx.stroke();
     }
@@ -488,12 +488,18 @@ let ject = new Lives();
 
 document.addEventListener("keydown", (e) => {
   if (e.code === "ArrowLeft") {
+    e.preventDefault();
+
     gamePad.left = true;
   }
   if (e.code === "ArrowRight") {
+    e.preventDefault();
+
     gamePad.right = true;
   }
-  if (e.code === "ArrowUp") {
+  if (e.code === "ArrowUp" || e.code === "Space") {
+    e.preventDefault();
+
     if (state === "START") state = "PLAYING";
     gamePad.up = true;
   }
@@ -508,10 +514,9 @@ document.addEventListener("keyup", (e) => {
   if (e.code === "ArrowRight") {
     gamePad.right = false;
   }
-  if (e.code === "ArrowUp") {
+  if (e.code === "ArrowUp" || e.code === "Space") {
     gamePad.up = false;
   }
-
   if (e.code === "KeyR") {
     gamePad.reset = false;
   }
@@ -562,7 +567,7 @@ let gameLoop = (currentTime) => {
           state = "START";
           lives -= 1;
           balls.push({
-            radius: 15,
+            radius: 15 * 2,
             positionX: paddle.startX + paddle.width * 0.5,
             positionY: paddle.startY - 30,
             xDirection: 0,

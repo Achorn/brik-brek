@@ -14,13 +14,15 @@
 
 
 body {
-
   background-color: var(--greyBlue);
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100vh;
   width: 100vw;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
 
 }
 
@@ -31,39 +33,37 @@ h1 {
 
 #game-wrapper {
   position: relative;
+  width: 700px;
+  height: 700px;
 }
 
 #my-canvas {
-  /* width: 100vw; */
-  border: 5px solid var(--);
   background-color: var(--lightPink);
+  transform: scale(50%);
+  transform-origin: top left;
+  position: absolute;
+  ;
 }
 
-#score-board {
 
+#score-board {
   position: absolute;
   color: var(--darkGreyBlue);
   width: 100%;
   top: 0;
   left: 0px;
   display: grid;
-  /* /* grid-template-columns: auto auto auto; */
-
   grid-template-columns: repeat(3, minmax(0, 1fr));
-
-  /* justify-content: space-between; */
   padding: 15px 25px;
 }
 
 #score-container {
-  /* background-color: red; */
   grid-column-start: 2;
   text-align: center;
 }
 
 #level-container {
   text-align: end;
-  /* background-color: blue; */
 }
 
 #title-container {
@@ -71,7 +71,7 @@ h1 {
   position: absolute;
   color: var(--darkGreyBlue);
   display: flex;
-  top: 70%;
+  top: 60%;
   left: 50%;
   flex-direction: column;
   transform: translate(-50%, -50%);
