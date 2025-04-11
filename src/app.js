@@ -41,14 +41,14 @@ let state = "START";
 
 let blockGroup = {
   entering: false,
-  Offset: 0,
+  offset: 0,
 };
 let updateBlockGroup = (deltaTime) => {
   // update offset
   if (blockGroup.entering) {
-    if (blockGroup.Offset < 0) {
-      let moveDistance = deltaTime * 0.4;
-      blockGroup.Offset += moveDistance;
+    if (blockGroup.offset < 0) {
+      let moveDistance = deltaTime * 0.7;
+      blockGroup.offset += moveDistance;
       blocks.forEach((block) => {
         if (block.id != "paddle") {
           block.startY = block.startY + moveDistance;
@@ -72,7 +72,7 @@ const createBlocks = () => {
           : greyBlue;
       blocks.push({
         startX: 25 * 2 + i * 136 * 2,
-        startY: paddingTop + j * 50 * 2 + blockGroup.Offset,
+        startY: paddingTop + j * 50 * 2 + blockGroup.offset,
         width: 100 * 2,
         height: 30 * 2,
         toDispose: false,
@@ -554,7 +554,7 @@ let gameLoop = (currentTime) => {
         // NEXT LEVEL
         level = level + 1;
         blockGroup.entering = true;
-        blockGroup.Offset = -400;
+        blockGroup.offset = -400 * 2;
         levelElement.innerHTML = level;
         createBlocks();
         // gameOverElement.style.display = "flex";
