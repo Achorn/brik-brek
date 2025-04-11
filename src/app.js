@@ -11,7 +11,6 @@ const gameOverElement = document.querySelector("#game-over");
 const gameOverTitleElement = document.querySelector("#game-over-title");
 const scoreElement = document.querySelector("#score");
 const livesElement = document.querySelector("#lives");
-
 const levelElement = document.querySelector("#level");
 
 let score = 0;
@@ -23,7 +22,9 @@ let canvas = document.querySelector("#my-canvas");
 let ctx = canvas.getContext("2d");
 let balls = [];
 let ballSpeed = 0.45;
+let powerSpeed = 1;
 let blocks = [];
+let powerups = [];
 // start, playing, pause game over
 let state = "START";
 
@@ -53,6 +54,7 @@ const createBlocks = () => {
     for (let j = 0; j < 4; j++) {
       let randomNum = Math.random();
       let powerNum = Math.random();
+      // let powerNum = 0.75;
       let color =
         randomNum < 0.333333
           ? darkPink
@@ -159,6 +161,12 @@ let activateBlockPower = (block) => {
     };
     balls.push(ball);
   }
+  if (block.power == "speed") {
+    powerups.push(new BallSpeedPowerUp());
+  }
+  if (block.power == "paddle") {
+    powerups.push(new PaddleGrowPowerUp());
+  }
 };
 // ctx.clearRect(45, 45, 60, 60);
 // ctx.strokeRect(50, 50, 50, 50);
@@ -222,8 +230,8 @@ let updateBalls = (deltaTime) => {
   }
 };
 let updateBall = (ball, deltaTime) => {
-  ball.positionX += ball.speed * deltaTime * ball.xDirection;
-  ball.positionY += ball.speed * deltaTime * ball.yDirection;
+  ball.positionX += ball.speed * powerSpeed * deltaTime * ball.xDirection;
+  ball.positionY += ball.speed * powerSpeed * deltaTime * ball.yDirection;
   // if (ball.positionY + ball.radius >= canvas.height) ball.yDirection = -1;
   if (ball.positionY - ball.radius <= 0)
     ball.yDirection = Math.abs(ball.yDirection);
@@ -398,6 +406,64 @@ const calculateCollisionSide = (block, ball) => {
   }
   return angle;
 };
+const updatePowerups = (deltaTime) => {
+  console.log("ball power: ", powerSpeed);
+  powerups = powerups.filter((power) => !power.toDispose);
+  console.log(powerups);
+
+  powerups.forEach((power) => {
+    power.update(deltaTime);
+  });
+};
+class PowerUp {
+  constructor() {
+    this.toDispose = false;
+  }
+  initPowerUp() {}
+  update(deltaTime) {}
+}
+class BallSpeedPowerUp extends PowerUp {
+  constructor() {
+    super();
+    this.timeLeft = 5000; //seconds
+    this.initPowerUp();
+  }
+  initPowerUp() {
+    // console.log("in init: powerspeed: ", powerSpeed);
+    powerSpeed = 1.35;
+  }
+  update(deltaTime) {
+    this.timeLeft -= deltaTime;
+    // console.log(deltaTime);
+    // console.log(this.timeLeft);
+    if (this.timeLeft <= 0) {
+      console.log("disposing");
+      this.toDispose = true;
+      powerSpeed = 1;
+    }
+  }
+}
+class PaddleGrowPowerUp extends PowerUp {
+  constructor() {
+    super();
+    this.timeLeft = 5000; //seconds
+    this.initPowerUp();
+  }
+  initPowerUp() {
+    // console.log("in init: powerspeed: ", powerSpeed);
+    paddle.width = 250;
+  }
+  update(deltaTime) {
+    this.timeLeft -= deltaTime;
+    // console.log(deltaTime);
+    // console.log(this.timeLeft);
+    if (this.timeLeft <= 0) {
+      this.toDispose = true;
+      paddle.width = 150;
+    }
+  }
+}
+
 document.addEventListener("keydown", (e) => {
   if (e.code === "ArrowLeft") {
     gamePad.left = true;
@@ -484,6 +550,7 @@ let gameLoop = (currentTime) => {
     updatePaddle(deltaTime);
     updateBlockGroup(deltaTime);
     updateBalls(deltaTime);
+    updatePowerups(deltaTime);
     if (state == "PLAYING") {
       titleElement.style.display = "none";
 
