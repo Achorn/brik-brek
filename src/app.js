@@ -7,21 +7,35 @@ const lightPink = "#f0dede";
 
 const darkPink = "#cf3673";
 const greyBlue = "#748cbb";
-
 const titleElement = document.querySelector("#title-container");
 const gameOverElement = document.querySelector("#game-over");
 const gameOverTitleElement = document.querySelector("#game-over-title");
 const scoreElement = document.querySelector("#score");
 const levelElement = document.querySelector("#level");
+const gameWrapperElement = document.querySelector("#game-wrapper");
 
 let canvas = document.querySelector("#my-canvas");
+
 let ctx = canvas.getContext("2d");
-// const updateCanvasSize = () => {
-//   canvas.style.transform = `scale(50%)`;
-// };
-// window.addEventListener("resize", (e) => {
-//   updateCanvasSize();
-// });
+const updateCanvasSize = (windowWidth) => {
+  let frac = windowWidth / 1400;
+  frac *= 100;
+  console.log(frac);
+  if (windowWidth < 700) {
+    canvas.style.transform = `scale(${frac}%)`;
+    gameWrapperElement.style.height = `${windowWidth}px`;
+    gameWrapperElement.style.width = `${windowWidth}px`;
+  } else {
+    canvas.style.transform = "scale(50%)";
+    gameWrapperElement.style.height = "700px";
+    gameWrapperElement.style.width = "700px";
+  }
+};
+updateCanvasSize(window.innerWidth);
+
+window.addEventListener("resize", (e) => {
+  updateCanvasSize(e.target.innerWidth);
+});
 
 let score = 0;
 let lives = 3;
@@ -189,12 +203,17 @@ let paddle = {
 };
 blocks.push(paddle);
 
+let touchObject = { moving: false, positionX: 0, initPos: [0, 0] };
 const updatePaddle = (deltaTime) => {
-  let direction = 0;
-  if (gamePad.left) direction -= 0.5 * deltaTime * 2;
-  if (gamePad.right) direction += 0.5 * deltaTime * 2;
+  if (touchObject.moving) {
+    paddle.startX = touchObject.positionX * 2 - paddle.width * 0.5;
+  } else {
+    let direction = 0;
+    if (gamePad.left) direction -= 0.5 * deltaTime * 2;
+    if (gamePad.right) direction += 0.5 * deltaTime * 2;
 
-  paddle.startX = paddle.startX + direction;
+    paddle.startX = paddle.startX + direction;
+  }
   if (paddle.startX <= 0) paddle.startX = 5;
   if (paddle.startX + paddle.width >= canvas.width)
     paddle.startX = canvas.width - paddle.width - 5;
@@ -521,6 +540,31 @@ document.addEventListener("keyup", (e) => {
     gamePad.reset = false;
   }
 });
+
+const handleStart = (evt) => {
+  evt.preventDefault();
+  const touch = evt.changedTouches[0];
+  touchObject.initPos = [touch.pageX, touch.pageY];
+  console.log(touch);
+};
+const handleMove = (evt) => {
+  touchObject.moving = true;
+  const touch = evt.changedTouches[0];
+
+  console.log(touch.pageX);
+  touchObject.positionX = touch.pageX;
+};
+const handleEnd = (evt) => {
+  touchObject.moving = false;
+  // const touch = evt.changedTouches[0];
+
+  if (state === "START") state = "PLAYING";
+};
+
+canvas.addEventListener("touchstart", handleStart);
+canvas.addEventListener("touchend", handleEnd);
+// canvas.addEventListener("touchcancel", handleCancel);
+canvas.addEventListener("touchmove", handleMove);
 
 const disposeBlocks = () => {
   blocks = blocks.filter((block) => !block.toDispose);
