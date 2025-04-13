@@ -1,5 +1,5 @@
 const canvasWidth = 1400;
-const canvasHeight = 1400;
+const canvasHeight = 1800;
 let cursorPosX = canvasWidth / 2;
 //COLORS
 const lightPink = "#f0dede";
@@ -19,16 +19,19 @@ let canvas = document.querySelector("#my-canvas");
 
 let ctx = canvas.getContext("2d");
 const updateCanvasSize = (windowWidth) => {
-  let frac = windowWidth / 1400;
-  frac *= 100;
+  let widthFrac = windowWidth / 1400;
+  let windowHeight = (windowWidth / 1400) * 1800;
+  // 1400/1800
+  widthFrac *= 100;
   if (windowWidth < 700) {
-    canvas.style.transform = `scale(${frac}%)`;
-    gameWrapperElement.style.height = `${windowWidth}px`;
+    canvas.style.transform = `scale(${widthFrac}%)`;
     gameWrapperElement.style.width = `${windowWidth}px`;
+    gameWrapperElement.style.height = `${windowHeight}px`;
+    gameWrapperElement.style.transform = "translate(0,-10%)";
   } else {
     canvas.style.transform = "scale(50%)";
-    gameWrapperElement.style.height = "700px";
     gameWrapperElement.style.width = "700px";
+    gameWrapperElement.style.height = `${(700 / 1400) * 1800}px`;
   }
 };
 updateCanvasSize(window.innerWidth);
