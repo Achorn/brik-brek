@@ -10,8 +10,8 @@ const greyBlue = "#748cbb";
 const titleElement = document.querySelector("#title-container");
 const gameOverElement = document.querySelector("#game-over");
 const gameOverTitleElement = document.querySelector("#game-over-title");
-const scoreElement = document.querySelector("#score");
-const levelElement = document.querySelector("#level");
+// const scoreElement = document.querySelector("#score");
+// const levelElement = document.querySelector("#level");
 const gameWrapperElement = document.querySelector("#game-wrapper");
 const debugEl = document.querySelector("#debug-container");
 
@@ -44,11 +44,12 @@ let score = 0;
 let lives = 3;
 let level = 1;
 let gamePad = { up: false, left: false, right: false, reset: false };
-let paddingTop = 65 * 2;
+let paddingTop = 90 * 2;
 ctx.imageSmoothingEnabled = false;
 let balls = [];
-let ballSpeed = 0.45 * 2;
+let ballSpeed = 0.5 * 2;
 let powerSpeed = 1;
+let ballRadius = 20 * 2;
 let blocks = [];
 let powerups = [];
 // start, playing, pause game over
@@ -91,7 +92,7 @@ const createBlocks = () => {
         startX: 25 * 2 + i * 136 * 2,
         startY: paddingTop + j * 50 * 2 + blockGroup.offset,
         width: 100 * 2,
-        height: 30 * 2,
+        height: 40 * 2,
         toDispose: false,
         id: i + j,
         color: color,
@@ -175,7 +176,7 @@ let activateBlockPower = (block) => {
   if (block.power == "ball") {
     let blockCenter = centerOfBlock(block);
     let ball = {
-      radius: 15 * 2,
+      radius: ballRadius,
       positionX: blockCenter.x,
       positionY: blockCenter.y,
       xDirection: 1,
@@ -195,11 +196,12 @@ let activateBlockPower = (block) => {
   }
 };
 
+const paddleHeight = 25 * 2;
 let paddle = {
   startX: canvas.width * 0.5 - 150 * 0.5 * 2,
-  startY: canvas.height - 50 * 2,
+  startY: canvas.height - paddleHeight * 3,
   width: 150 * 2,
-  height: 20 * 2,
+  height: paddleHeight,
   toDispose: false,
   color: greyBlue,
   id: "paddle",
@@ -225,7 +227,7 @@ const updatePaddle = (deltaTime) => {
 };
 
 let primaryBall = {
-  radius: 15 * 2,
+  radius: ballRadius,
   positionX: canvas.width / 2,
   positionY: canvas.width / 2,
   xDirection: 0,
@@ -480,9 +482,10 @@ class PaddleGrowPowerUp extends PowerUp {
 class Lives {
   constructor() {
     this.startX = 45 * 2;
-    this.startY = 35 * 2;
-    this.padding = 45 * 2;
-    this.radius = 13 * 2;
+    this.startY = paddingTop * 0.5;
+    this.padding = 50 * 2;
+    this.stroke = 3 * 2;
+    this.radius = ballRadius - this.stroke;
   }
   update(deltaTime) {}
   draw() {
@@ -506,7 +509,7 @@ class Lives {
     }
   }
 }
-let ject = new Lives();
+let livesObject = new Lives();
 
 document.addEventListener("keydown", (e) => {
   if (e.code === "ArrowLeft") {
@@ -580,8 +583,20 @@ window.addEventListener("touchmove", handleMove);
 const disposeBlocks = () => {
   blocks = blocks.filter((block) => !block.toDispose);
 };
-const updateScore = () => {
-  scoreElement.innerHTML = score;
+// const updateScore = () => {
+//   scoreElement.innerHTML = score;
+// };
+const drawScore = () => {
+  ctx.font = "bold 105px Gothic A1";
+  ctx.fillStyle = greyBlue;
+
+  let paddingSides = 45 * 2;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  ctx.fillText(score, canvasWidth / 2, paddingTop * 0.5);
+  // ctx.textAlign = "end";
+  // ctx.fillText(score, 150, 80);
 };
 
 let lastTime = 16;
@@ -597,7 +612,7 @@ let gameLoop = (currentTime) => {
     updateBlockGroup(deltaTime);
     updateBalls(deltaTime);
     updatePowerups(deltaTime);
-    ject.update(deltaTime);
+    livesObject.update(deltaTime);
 
     if (state == "PLAYING") {
       titleElement.style.display = "none";
@@ -610,7 +625,7 @@ let gameLoop = (currentTime) => {
         level = level + 1;
         blockGroup.entering = true;
         blockGroup.offset = -400 * 2;
-        levelElement.innerHTML = level;
+        // levelElement.innerHTML = level;
         createBlocks();
         // gameOverElement.style.display = "flex";
       }
@@ -622,7 +637,7 @@ let gameLoop = (currentTime) => {
           state = "START";
           lives -= 1;
           balls.push({
-            radius: 15 * 2,
+            radius: ballRadius,
             positionX: paddle.startX + paddle.width * 0.5,
             positionY: paddle.startY - 30,
             xDirection: 0,
@@ -642,8 +657,9 @@ let gameLoop = (currentTime) => {
     // drawPaddle();
     drawBlocks();
     drawBalls();
-    ject.draw();
-    updateScore();
+    livesObject.draw();
+    // updateScore();
+    drawScore();
     // Store the current time for the next frame
     lastTime = currentTime;
   }
