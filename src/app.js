@@ -13,6 +13,7 @@ const gameOverTitleElement = document.querySelector("#game-over-title");
 const scoreElement = document.querySelector("#score");
 const levelElement = document.querySelector("#level");
 const gameWrapperElement = document.querySelector("#game-wrapper");
+const debugEl = document.querySelector("#debug-container");
 
 let canvas = document.querySelector("#my-canvas");
 
@@ -20,7 +21,6 @@ let ctx = canvas.getContext("2d");
 const updateCanvasSize = (windowWidth) => {
   let frac = windowWidth / 1400;
   frac *= 100;
-  console.log(frac);
   if (windowWidth < 700) {
     canvas.style.transform = `scale(${frac}%)`;
     gameWrapperElement.style.height = `${windowWidth}px`;
@@ -203,10 +203,10 @@ let paddle = {
 };
 blocks.push(paddle);
 
-let touchObject = { moving: false, positionX: 0, initPos: [0, 0] };
+let touchObject = { moving: false, positionX: 0 };
 const updatePaddle = (deltaTime) => {
   if (touchObject.moving) {
-    paddle.startX = touchObject.positionX * 2 - paddle.width * 0.5;
+    paddle.startX = touchObject.positionX - paddle.width * 0.5;
   } else {
     let direction = 0;
     if (gamePad.left) direction -= 0.5 * deltaTime * 2;
@@ -545,14 +545,22 @@ const handleStart = (evt) => {
   evt.preventDefault();
   const touch = evt.changedTouches[0];
   touchObject.initPos = [touch.pageX, touch.pageY];
-  console.log(touch);
 };
 const handleMove = (evt) => {
   touchObject.moving = true;
   const touch = evt.changedTouches[0];
 
-  console.log(touch.pageX);
-  touchObject.positionX = touch.pageX;
+  let x = touch.clientX - canvas.getBoundingClientRect().left; // remove padding between start of screen and start of canvas
+  let canvasWidth =
+    canvas.getBoundingClientRect().right - canvas.getBoundingClientRect().left;
+
+  let xPos = canvasWidth - (canvasWidth - x);
+  let normalize = xPos / canvasWidth; // reduce to size between
+
+  let growth = 1400 * normalize; //resize to canvas internal res
+
+  touchObject.positionX = growth;
+  debugEl.innerHTML = xPos;
 };
 const handleEnd = (evt) => {
   touchObject.moving = false;
@@ -561,10 +569,10 @@ const handleEnd = (evt) => {
   if (state === "START") state = "PLAYING";
 };
 
-canvas.addEventListener("touchstart", handleStart);
-canvas.addEventListener("touchend", handleEnd);
+window.addEventListener("touchstart", handleStart);
+window.addEventListener("touchend", handleEnd);
 // canvas.addEventListener("touchcancel", handleCancel);
-canvas.addEventListener("touchmove", handleMove);
+window.addEventListener("touchmove", handleMove);
 
 const disposeBlocks = () => {
   blocks = blocks.filter((block) => !block.toDispose);

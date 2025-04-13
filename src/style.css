@@ -45,6 +45,11 @@ h1 {
   ;
 }
 
+#debug-container {
+  display: none;
+  position: absolute;
+  color: black
+}
 
 #score-board {
   position: absolute;
