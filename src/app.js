@@ -1,3 +1,5 @@
+import sfx from "./classes/SoundController";
+
 const canvasWidth = 1400;
 const canvasHeight = 1800;
 let cursorPosX = canvasWidth / 2;
@@ -185,6 +187,7 @@ let activateBlockPower = (block) => {
       color: block.color,
       life: 1,
       toDispose: false,
+      touchedPaddleLast: false,
     };
     balls.push(ball);
   }
@@ -236,6 +239,7 @@ let primaryBall = {
   color: "white",
   life: 1,
   toDispose: false,
+  touchedPaddleLast: false,
 };
 primaryBall.positionY = canvas.height - 80;
 
@@ -254,12 +258,23 @@ let updateBall = (ball, deltaTime) => {
   ball.positionX += ball.speed * powerSpeed * deltaTime * ball.xDirection;
   ball.positionY += ball.speed * powerSpeed * deltaTime * ball.yDirection;
   // if (ball.positionY + ball.radius >= canvas.height) ball.yDirection = -1;
-  if (ball.positionY - ball.radius <= 0)
+  let impact = false;
+  if (ball.positionY - ball.radius <= 0) {
     ball.yDirection = Math.abs(ball.yDirection);
-  if (ball.positionX + ball.radius >= canvas.width)
+    impact = true;
+  }
+  if (ball.positionX + ball.radius >= canvas.width) {
     ball.xDirection = -Math.abs(ball.xDirection);
-  if (ball.positionX - ball.radius <= 0)
+    impact = true;
+  }
+  if (ball.positionX - ball.radius <= 0) {
     ball.xDirection = Math.abs(ball.xDirection);
+    impact = true;
+  }
+  if (impact) {
+    sfx.impact.play();
+    ball.touchedPaddleLast = false;
+  }
 
   //out of bounds
   if (ball.positionY - ball.radius > canvas.height) {
@@ -295,10 +310,15 @@ const checkCollision = () => {
         if (block.id != "paddle") {
           activateBlockPower(block);
           block.toDispose = true;
+          ball.touchedPaddleLast = false;
+          sfx.explosion.play();
           score += 50;
         } else {
+          if (!ball.touchedPaddleLast) {
+            sfx.impact.play();
+            ball.touchedPaddleLast = true;
+          }
           //calculate ball angle hitting paddle
-
           let blockSurface = {
             start: block.startX,
             end: block.startX + block.width,
@@ -484,7 +504,7 @@ class Lives {
     this.startX = 45 * 2;
     this.startY = paddingTop * 0.5;
     this.padding = 50 * 2;
-    this.stroke = 3 * 2;
+    this.stroke = 4 * 2;
     this.radius = ballRadius - this.stroke;
   }
   update(deltaTime) {}
@@ -503,7 +523,7 @@ class Lives {
         ctx.fillStyle = "white";
         ctx.fill();
       }
-      ctx.lineWidth = 3 * 2;
+      ctx.lineWidth = this.stroke;
       ctx.strokeStyle = "white";
       ctx.stroke();
     }
