@@ -1,5 +1,18 @@
 import sfx from "./classes/SoundController";
 
+var audioOnImg = new Image();
+import * as url from "../static/images/speaker-filled-audio-tool.png";
+// import * as url from '../images/webpack_logo.png';
+
+audioOnImg.src = url.default;
+
+var audioOffImg = new Image();
+import * as offUrl from "../static/images/no-sound.png";
+audioOffImg.src = offUrl.default;
+let imgLoaded = false;
+audioOnImg.onload = () => (imgLoaded = true);
+let audioOn = false;
+
 const canvasWidth = 1400;
 const canvasHeight = 1800;
 let cursorPosX = canvasWidth / 2;
@@ -18,6 +31,39 @@ const gameWrapperElement = document.querySelector("#game-wrapper");
 const debugEl = document.querySelector("#debug-container");
 
 let canvas = document.querySelector("#my-canvas");
+let elemLeft = canvas.offsetLeft + canvas.clientLeft;
+let elemTop = canvas.offsetTop + canvas.clientTop;
+let elements = [];
+
+// https://stackoverflow.com/questions/9880279/how-do-i-add-a-simple-onclick-event-handler-to-a-canvas-element
+// https://codepen.io/devellopah/pen/dZLVOG
+let toggleAudioMute = () => {
+  for (const [key, value] of Object.entries(sfx)) {
+    value.mute(!audioOn);
+  }
+};
+canvas.addEventListener(
+  "click",
+  function (event) {
+    var x = event.pageX - canvas.getBoundingClientRect().left,
+      y = event.pageY;
+    x = getXPosInScaledCanvas(event.pageX);
+    y = getYPosInScaledCanvas(event.pageY);
+    // Collision detection between clicked offset and element.
+    elements.forEach(function (element) {
+      if (
+        y > element.top &&
+        y < element.top + element.height &&
+        x > element.left &&
+        x < element.left + element.width
+      ) {
+        audioOn = !audioOn;
+        toggleAudioMute();
+      }
+    });
+  },
+  false
+);
 
 let ctx = canvas.getContext("2d");
 const updateCanvasSize = (windowWidth) => {
@@ -47,6 +93,7 @@ let lives = 3;
 let level = 1;
 let gamePad = { up: false, left: false, right: false, reset: false };
 let paddingTop = 90 * 2;
+let paddingSides = 45 * 2;
 ctx.imageSmoothingEnabled = false;
 let balls = [];
 let ballSpeed = 0.5 * 2;
@@ -503,7 +550,7 @@ class Lives {
   constructor() {
     this.startX = 45 * 2;
     this.startY = paddingTop * 0.5;
-    this.padding = 50 * 2;
+    this.padding = paddingSides;
     this.stroke = 4 * 2;
     this.radius = ballRadius - this.stroke;
   }
@@ -567,6 +614,31 @@ document.addEventListener("keyup", (e) => {
   }
 });
 
+const getXPosInScaledCanvas = (clientX) => {
+  let x = clientX - canvas.getBoundingClientRect().left; // remove padding between start of screen and start of canvas
+  let canvasWidth =
+    canvas.getBoundingClientRect().right - canvas.getBoundingClientRect().left;
+
+  let xPos = canvasWidth - (canvasWidth - x);
+  let normalize = xPos / canvasWidth; // reduce to size between
+
+  let growth = 1400 * normalize; //resize to canvas internal res
+
+  return growth;
+};
+
+const getYPosInScaledCanvas = (clientY) => {
+  let y = clientY - canvas.getBoundingClientRect().top; // remove padding between top of screen and top of canvas
+  let canvasHeight =
+    canvas.getBoundingClientRect().bottom - canvas.getBoundingClientRect().top;
+
+  let yPos = canvasHeight - (canvasHeight - y);
+  let normalize = yPos / canvasHeight; // reduce to size between
+
+  let growth = 1800 * normalize; //resize to canvas internal res
+
+  return growth;
+};
 const handleStart = (evt) => {
   evt.preventDefault();
   const touch = evt.changedTouches[0];
@@ -576,17 +648,15 @@ const handleMove = (evt) => {
   touchObject.moving = true;
   const touch = evt.changedTouches[0];
 
-  let x = touch.clientX - canvas.getBoundingClientRect().left; // remove padding between start of screen and start of canvas
-  let canvasWidth =
-    canvas.getBoundingClientRect().right - canvas.getBoundingClientRect().left;
-
-  let xPos = canvasWidth - (canvasWidth - x);
-  let normalize = xPos / canvasWidth; // reduce to size between
-
-  let growth = 1400 * normalize; //resize to canvas internal res
-
-  touchObject.positionX = growth;
-  debugEl.innerHTML = xPos;
+  // let x = touch.clientX - canvas.getBoundingClientRect().left; // remove padding between start of screen and start of canvas
+  // let canvasWidth =
+  // canvas.getBoundingClientRect().right - canvas.getBoundingClientRect().left;
+  // let xPos = canvasWidth - (canvasWidth - x);
+  // console.log("oldX: ", xPos);
+  // let normalize = xPos / canvasWidth; // reduce to size between
+  // let growth = 1400 * normalize; //resize to canvas internal res
+  let xPos = getXPosInScaledCanvas(touch.clientX);
+  touchObject.positionX = xPos;
 };
 const handleEnd = (evt) => {
   touchObject.moving = false;
@@ -617,6 +687,30 @@ const drawScore = () => {
   ctx.fillText(score, canvasWidth / 2, paddingTop * 0.5);
   // ctx.textAlign = "end";
   // ctx.fillText(score, 150, 80);
+};
+
+elements.push({
+  height: 130,
+  left: canvasWidth - paddingSides - 130,
+  top: paddingTop * 0.5 - 130 * 0.5,
+  width: 130,
+});
+const drawMenu = () => {
+  if (!imgLoaded) return;
+  let selectedImg = audioOn ? audioOnImg : audioOffImg;
+  let size = 130;
+  let startX = canvasWidth - paddingSides - size;
+  let startY = paddingTop * 0.5 - size * 0.5;
+  // ctx.globalCompositeOperation = "source-over";
+
+  // // draw color
+  ctx.fillStyle = audioOn ? greyBlue : darkPink;
+  ctx.fillRect(startX, startY, size, size);
+  // set composite mode
+  ctx.globalCompositeOperation = "destination-in";
+  // // draw image
+  ctx.drawImage(selectedImg, startX, startY, size, size);
+  ctx.globalCompositeOperation = "source-over";
 };
 
 let lastTime = 16;
@@ -675,6 +769,7 @@ let gameLoop = (currentTime) => {
     }
 
     // drawPaddle();
+    drawMenu();
     drawBlocks();
     drawBalls();
     livesObject.draw();
