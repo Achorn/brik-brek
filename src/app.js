@@ -92,12 +92,13 @@ let score = 0;
 let lives = 3;
 let level = 1;
 let gamePad = { up: false, left: false, right: false, reset: false };
-let paddingTop = 90 * 2;
+let paddingTop = 120 * 2;
 let paddingSides = 45 * 2;
 ctx.imageSmoothingEnabled = false;
 let balls = [];
 let ballSpeed = 0.5 * 2;
 let powerSpeed = 1;
+let levelSpeed = 1;
 let ballRadius = 20 * 2;
 let blocks = [];
 let powerups = [];
@@ -126,6 +127,11 @@ let updateBlockGroup = (deltaTime) => {
 };
 const createBlocks = () => {
   //randomly select powerups
+
+  //more with level youre on
+
+  let spaceLeft = canvasWidth - paddingSides * 2;
+  console.log(spaceLeft);
   for (let i = 0; i < 5; i++) {
     for (let j = 0; j < 4; j++) {
       let randomNum = Math.random();
@@ -228,11 +234,10 @@ let activateBlockPower = (block) => {
       radius: ballRadius,
       positionX: blockCenter.x,
       positionY: blockCenter.y,
-      xDirection: 1,
-      yDirection: -1,
+      xDirection: 0.6370204626000374,
+      yDirection: -0.7708468915607264,
       speed: ballSpeed,
       color: block.color,
-      life: 1,
       toDispose: false,
       touchedPaddleLast: false,
     };
@@ -280,8 +285,8 @@ let primaryBall = {
   radius: ballRadius,
   positionX: canvas.width / 2,
   positionY: canvas.width / 2,
-  xDirection: 0,
-  yDirection: -1,
+  xDirection: 0.6370204626000374,
+  yDirection: -0.7708468915607264,
   speed: ballSpeed,
   color: "white",
   life: 1,
@@ -296,14 +301,16 @@ let updateBalls = (deltaTime) => {
   if (state == "START") {
     //update primary ball
     balls[0].positionX = paddle.startX + paddle.width * 0.5;
-    balls[0].positionY = paddle.startY - 30 * 2;
+    balls[0].positionY = paddle.startY - ballRadius * 2;
   } else {
     balls.forEach((ball) => updateBall(ball, deltaTime));
   }
 };
 let updateBall = (ball, deltaTime) => {
-  ball.positionX += ball.speed * powerSpeed * deltaTime * ball.xDirection;
-  ball.positionY += ball.speed * powerSpeed * deltaTime * ball.yDirection;
+  ball.positionX +=
+    ball.speed * levelSpeed * powerSpeed * deltaTime * ball.xDirection;
+  ball.positionY +=
+    ball.speed * levelSpeed * powerSpeed * deltaTime * ball.yDirection;
   // if (ball.positionY + ball.radius >= canvas.height) ball.yDirection = -1;
   let impact = false;
   if (ball.positionY - ball.radius <= 0) {
@@ -326,6 +333,9 @@ let updateBall = (ball, deltaTime) => {
   //out of bounds
   if (ball.positionY - ball.radius > canvas.height) {
     ball.toDispose = true;
+    if (ball.life == 1) {
+      lives -= 1;
+    }
   }
 };
 
@@ -350,10 +360,10 @@ const checkCollision = () => {
     balls.forEach((ball) => {
       if (isColliding(block, ball)) {
         let side = calculateCollisionSide(block, ball);
-        if (side == 1) ball.yDirection = 1; //bottom
-        if (side == 2) ball.xDirection = -1; //left
-        if (side == 3) ball.xDirection = 1; //right
-        if (side == 4) ball.yDirection = -1; //top
+        if (side == 1) ball.yDirection = ball.yDirection * -1; //bottom
+        if (side == 2) ball.xDirection = ball.xDirection * -1; //left
+        if (side == 3) ball.xDirection = ball.xDirection * -1; //right
+        if (side == 4) ball.yDirection = ball.yDirection * -1; //top
         if (block.id != "paddle") {
           activateBlockPower(block);
           block.toDispose = true;
@@ -391,14 +401,13 @@ const checkCollision = () => {
           let direction = distanceFromCenter <= 0 ? 1 : -1;
           let alpha = Math.abs(distanceFromCenter);
           let c = 1;
-          const alphaRad = (alpha * Math.PI) / 180;
-
+          let alphaRad = (alpha * Math.PI) / 180;
           // Calculate side a
+
           const a = c * Math.sin(alphaRad);
 
           // Calculate side b
           const b = c * Math.cos(alphaRad);
-
           // paddle position
           // normalize or whatever
           // generate angle with window of tolerance
@@ -559,7 +568,7 @@ class Lives {
     for (let i = 0; i < 3; i++) {
       ctx.beginPath();
       ctx.arc(
-        this.startX + this.padding * i,
+        this.padding + (this.radius + this.stroke * 8) * i,
         this.startY,
         this.radius,
         0,
@@ -647,21 +656,13 @@ const handleStart = (evt) => {
 const handleMove = (evt) => {
   touchObject.moving = true;
   const touch = evt.changedTouches[0];
-
-  // let x = touch.clientX - canvas.getBoundingClientRect().left; // remove padding between start of screen and start of canvas
-  // let canvasWidth =
-  // canvas.getBoundingClientRect().right - canvas.getBoundingClientRect().left;
-  // let xPos = canvasWidth - (canvasWidth - x);
-  // console.log("oldX: ", xPos);
-  // let normalize = xPos / canvasWidth; // reduce to size between
-  // let growth = 1400 * normalize; //resize to canvas internal res
   let xPos = getXPosInScaledCanvas(touch.clientX);
   touchObject.positionX = xPos;
 };
 const handleEnd = (evt) => {
   touchObject.moving = false;
   // const touch = evt.changedTouches[0];
-
+  //TODO check if in same spot then only play
   if (state === "START") state = "PLAYING";
 };
 
@@ -737,6 +738,7 @@ let gameLoop = (currentTime) => {
       if (blocks.length == 1) {
         // NEXT LEVEL
         level = level + 1;
+        levelSpeed += 0.05;
         blockGroup.entering = true;
         blockGroup.offset = -400 * 2;
         // levelElement.innerHTML = level;
@@ -749,13 +751,12 @@ let gameLoop = (currentTime) => {
           gameOverElement.style.display = "flex";
         } else {
           state = "START";
-          lives -= 1;
           balls.push({
             radius: ballRadius,
             positionX: paddle.startX + paddle.width * 0.5,
             positionY: paddle.startY - 30,
-            xDirection: 0,
-            yDirection: -1,
+            xDirection: 0.6370204626000374,
+            yDirection: -0.7708468915607264,
             speed: ballSpeed,
             color: "white",
             life: 1,
